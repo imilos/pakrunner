@@ -1,7 +1,7 @@
 FROM ubuntu:focal
 
 # Install dependencies
-RUN apt-get update -y && apt-get install openjdk-11-jre-headless lsof mpich zip bc python-is-python2 wget apt-transport-https -y
+RUN apt-get update -y && apt-get install openjdk-17-jre-headless lsof mpich zip bc python-is-python2 wget apt-transport-https curl -y
 
 # Install dotnet core
 RUN wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && dpkg -i packages-microsoft-prod.deb

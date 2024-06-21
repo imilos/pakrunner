@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.5.0</version>
+        <version>3.3.0</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>rs.mivanovic</groupId>
@@ -14,7 +14,7 @@
     <name>pakrunner</name>
     <description>Pakrunner</description>
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
     </properties>
     <dependencies>
         <dependency>
@@ -27,12 +27,20 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        
+
+        <!--        
         <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-boot-starter</artifactId>
-            <version>3.0.0</version>
-        </dependency>        
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-ui</artifactId>
+            <version>1.8.0</version>            
+        </dependency>
+        -->
+        
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    <version>2.5.0</version>
+</dependency>        
 
         <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.core/jersey-server -->
         <dependency>
@@ -41,10 +49,11 @@
         </dependency>
 		
         <!-- https://mvnrepository.com/artifact/com.sun.jersey/jersey-json -->
+        <!--
         <dependency>
             <groupId>com.sun.jersey</groupId>
             <artifactId>jersey-json</artifactId>
-            <version>1.19.3</version>
+            <version>1.19.4</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax.ws.rs</groupId>
@@ -52,7 +61,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
-		
+	-->	
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
@@ -63,7 +72,7 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.7</version>
+            <version>2.16.1</version>
         </dependency>
 	
 
@@ -82,25 +91,16 @@
         <dependency>
             <groupId>com.thetransactioncompany</groupId>
             <artifactId>cors-filter</artifactId>
-            <version>2.5</version>
+            <version>3.0</version>
         </dependency>
 		
         <dependency>
             <!-- jsoup HTML parser library @ http://jsoup.org/ -->
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>[1.14.2,)</version>
+            <version>[1.17.2,)</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/com.sun.jersey.contribs/jersey-multipart 
-                        <dependency>
-                            <groupId>com.sun.jersey.contribs</groupId>
-                            <artifactId>jersey-multipart</artifactId>
-                            <version>1.19.3</version>
-                        </dependency>
-                        
-        
-        -->
         <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-multipart -->
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>

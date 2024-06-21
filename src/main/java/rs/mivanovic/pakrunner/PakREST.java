@@ -17,12 +17,15 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-
 import java.io.IOException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import java.io.FileInputStream;
 
 import org.apache.commons.io.FileUtils;
@@ -73,13 +76,25 @@ public class PakREST {
      *
      * @param input
      * @return
-     * @throws JSONException
      */
     @PostMapping("/echo")
-    public ResponseEntity echo(@RequestBody String input) throws JSONException {
+    @Operation(
+            summary = "Echo vraća string koji mu je poslat.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Vraća isti string koji mu je poslat.",
+                    content = @Content(
+                            examples = @ExampleObject(
+                                    name = "CustomRequest",
+                                    value = "{\"guid\":\"3333-5555\", \"command\":\"./proba.sh\"}"
+                            )
+                    )
+            )
+    )
+    public ResponseEntity echo(@RequestBody String input) {
 
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
         JsonNode jsonNode;
-        JSONObject json = new JSONObject();
 
         try {
             ObjectMapper objectMapper = new ObjectMapper();
@@ -98,12 +113,26 @@ public class PakREST {
      *
      * @param input
      * @return
-     * @throws JSONException
      */
     @PostMapping("/createnew")
-    public ResponseEntity createNewTask(@RequestBody String input) throws JSONException {
+    @Operation(
+            summary = "Kreiranje novog posla",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Osnovna jedinica rada je posao, koji se kreira pozivom /createnew, kopiranjem sadržaja direktorijuma MASTER_DIR "
+                    + "u direktorijum RESULT_DIR/GUID. Kopiranje direktorijuma NIJE rekurzivno. Ukoliko dati posao već postoji, nastaje greška. "
+                    + "Kreiranje posla NE POKREĆE proračun, već ga samo priprema.",
+                    content = @Content(
+                            examples = @ExampleObject(
+                                    name = "CustomRequest",
+                                    value = "{\"guid\":\"3333-4444\"}"
+                            )
+                    )
+            )
+    )
+    public ResponseEntity createNewTask(@RequestBody String input) {
 
-        JSONObject json = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
 
         try {
 
@@ -112,7 +141,7 @@ public class PakREST {
 
             // Proveri da li je JSON u pravom formatu i setuj varijable
             if (!jsonNode.has("guid")) {
-                throw new JSONException("JSON format problem.");
+                throw new RuntimeException("ERROR: JSON format problem");
             } else {
                 GUID = jsonNode.get("guid").asText();
             }
@@ -132,7 +161,7 @@ public class PakREST {
             // Setuj executable dozvole
             PakUtil.directorySetExecutable(workdir);
 
-        } catch (JSONException e) {
+        } catch (RuntimeException e) {
             json.put("status", false);
             json.put("message", "ERROR: JSON format problem.");
             return ResponseEntity.ok(json.toString());
@@ -154,12 +183,24 @@ public class PakREST {
      *
      * @param input
      * @return
-     * @throws JSONException
      */
     @PostMapping("/start")
-    public ResponseEntity startService(@RequestBody String input) throws JSONException {
+    @Operation(
+            summary = "Pokreće kreirani posao",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Kreiran posao se ne pokreće automatski. Potrebno je uz GUID navesti i komandu koja pokreće proračun",
+                    content = @Content(
+                            examples = @ExampleObject(
+                                    name = "CustomRequest",
+                                    value = "{\"guid\":\"3333-4444\", \"command\":\"./proba.sh\"}"
+                            )
+                    )
+            )
+    )
+    public ResponseEntity startService(@RequestBody String input) {
 
-        JSONObject json = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
 
         try {
             // Ako je vec aktivan, prvo ubij proces
@@ -170,7 +211,7 @@ public class PakREST {
 
             // Proveri da li je JSON u pravom formatu i setuj varijable
             if (!jsonNode.has("guid") || !jsonNode.has("command")) {
-                throw new JSONException("JSON format problem.");
+                throw new RuntimeException("ERROR: JSON format problem");
             } else {
                 GUID = jsonNode.get("guid").asText();
                 COMMAND = jsonNode.get("command").asText();
@@ -195,7 +236,7 @@ public class PakREST {
             process = pb.start();
             startTime = System.nanoTime();
 
-        } catch (JSONException e) {
+        } catch (RuntimeException e) {
             json.put("status", false);
             json.put("message", "ERROR: JSON format problem.");
             return ResponseEntity.ok(json.toString());
@@ -216,12 +257,25 @@ public class PakREST {
      *
      * @param input
      * @return
-     * @throws JSONException
      */
     @PostMapping("/stop")
-    public ResponseEntity stopService(@RequestBody String input) throws JSONException {
+    @Operation(
+            summary = "Zaustavljanje posla",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Posao se može u svakom trenutku zaustaviti jednostavnim pozivom. "
+                    + "Terminacija procesa implicira i terminaciju procesa koje je osnovni proces eventualno pokrenuo.",
+                    content = @Content(
+                            examples = @ExampleObject(
+                                    name = "CustomRequest",
+                                    value = "{\"guid\":\"3333-4444\"}"
+                            )
+                    )
+            )
+    )
+    public ResponseEntity stopService(@RequestBody String input) {
 
-        JSONObject json = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
 
         try {
             // Ubij glavni proces
@@ -265,12 +319,22 @@ public class PakREST {
      *
      * @param guidInput
      * @return
-     * @throws JSONException
      */
     @GetMapping("/isrunning/{guid}")
-    public ResponseEntity isRunning(@PathVariable("guid") String guidInput) throws JSONException {
+    @Operation(
+            summary = "Upit statusa posla.",
+            parameters = {
+                @Parameter(
+                        name = "guid",
+                        description = "GUID posla",
+                        example = "1111-4444"
+                )
+            }
+    )
+    public ResponseEntity isRunning(@PathVariable("guid") String guidInput) {
 
-        JSONObject json = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
         boolean status = false;
 
         // Ako je proces ziv i poslati guid odgovara globalnom GUID-u
@@ -293,12 +357,17 @@ public class PakREST {
      * Vraca GUID proracuna ako proracun radi
      *
      * @return
-     * @throws JSONException
      */
     @GetMapping("/runningtask")
-    public ResponseEntity runningGuid() throws JSONException {
+    @Operation(
+            summary = "Trenutno aktivan posao. Vraća se GUID trenutno aktivnog posla i status true u slučaju da bilo koji proračun trenutno radi. "
+            + "U suprotnom se vraća status false i prazan string za GUID.",
+            parameters = {}
+    )
+    public ResponseEntity runningGuid() {
 
-        JSONObject json = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
 
         // Ako je proces ziv i poslati guid odgovara globalnom GUID-u
         if (process != null && process.isAlive()) {
@@ -320,6 +389,21 @@ public class PakREST {
      * @return
      */
     @GetMapping("/logtail/{guid}/{lines}")
+    @Operation(
+            summary = "Poslednjih n linija loga za posao GUID. Ako je n=0, preuzima se ceo log.",
+            parameters = {
+                @Parameter(
+                        name = "guid",
+                        description = "GUID posla",
+                        example = "1111-4444"
+                ),
+                @Parameter(
+                        name = "lines",
+                        description = "Broj linija.",
+                        example = "10"
+                )
+            }
+    )
     public String[] getLogTail(@PathVariable("guid") String guid, @PathVariable("lines") int lines) {
 
         // Ako je lines==0, salji ceo log
@@ -339,6 +423,16 @@ public class PakREST {
      * @throws IOException
      */
     @GetMapping("/logdownload/{guid}")
+    @Operation(
+            summary = "Preuzimanje loga",
+            parameters = {
+                @Parameter(
+                        name = "guid",
+                        description = "GUID taska",
+                        example = "111-4444"
+                )
+            }
+    )
     public ResponseEntity downloadLog(@PathVariable("guid") String guidInput) throws IOException {
 
         String workdir = WORKING_DIR_ROOT + File.separator + guidInput;
@@ -366,6 +460,18 @@ public class PakREST {
      * @return
      */
     @PostMapping("/getresults")
+    @Operation(
+            summary = "Preuzimanje rezultata posla",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Rezultati (ili bilo koji fajlovi u argumentu files) iz nekog posla se mogu preuzeti u formi priloga pomoću poziva.",
+                    content = @Content(
+                            examples = @ExampleObject(
+                                    name = "CustomRequest",
+                                    value = "{\"guid\":\"3333-4444\", \"files\":[\"proba.sh\",\"pak.log\"]}"
+                            )
+                    )
+            )
+    )
     public ResponseEntity getResults(@RequestBody String input) {
 
         try {
@@ -380,7 +486,7 @@ public class PakREST {
             List<String> fileNames = objectMapper.readValue(filesJSON, List.class);
 
             // Konvertuj listu u niz stringova
-            String[] fileNamesArray = fileNames.toArray(new String[0]);
+            String[] fileNamesArray = fileNames.toArray(String[]::new);
 
             String workdir = WORKING_DIR_ROOT + File.separator + GUID;
 
@@ -400,7 +506,7 @@ public class PakREST {
             }
 
         } catch (IOException e) {
-            return new ResponseEntity("EROR: I/O problem!", HttpStatus.NOT_FOUND);
+            return new ResponseEntity("ERROR: I/O problem!", HttpStatus.NOT_FOUND);
         }
 
         return new ResponseEntity("ERROR: ZIP file not found!", HttpStatus.NOT_FOUND);
@@ -411,12 +517,22 @@ public class PakREST {
      *
      * @param guidInput
      * @return
-     * @throws JSONException
      */
     @GetMapping("/remove/{guid}")
-    public ResponseEntity remove(@PathVariable("guid") String guidInput) throws JSONException {
+    @Operation(
+            summary = "Uklanjanje posla. Ceo posao se može ukloniti. Pre toga se zaustavlja ukoliko je proračun bio aktivan. ",
+            parameters = {
+                @Parameter(
+                        name = "guid",
+                        description = "GUID taska",
+                        example = "3333-4444"
+                )
+            }
+    )
+    public ResponseEntity remove(@PathVariable("guid") String guidInput) {
 
-        JSONObject json = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
 
         // Ako je nalog za brisanje poslat tekucem GUID-u, prvo stopiraj proracun
         if (guidInput.equals(GUID)) {
@@ -447,12 +563,16 @@ public class PakREST {
      * Brise sve poslove u WORKING_DIR_ROOT
      *
      * @return
-     * @throws JSONException
      */
     @GetMapping("/removeall")
-    public ResponseEntity removeAll() throws JSONException {
+    @Operation(
+            summary = "Brisanje svih poslova",
+            parameters = {}
+    )
+    public ResponseEntity removeAll() {
 
-        JSONObject json = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
 
         // Ako je nalog za brisanje svih poslat, prvo stopiraj proracun
         stopService(GUID);
@@ -474,17 +594,31 @@ public class PakREST {
      *
      * @param uploadedInputStream
      * @param guidInput
+     * @param modelMap
      * @return
-     * @throws org.codehaus.jettison.json.JSONException
      */
     @PostMapping("/uploadzip")
+    @Operation(
+            summary = "Upload ZIP-a u posao. Swagger (OpenAPI) UI ne radi za ovaj poziv. pogledati curl primer.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Upload i raspakovavanje ZIP fajla u radni direktorijum posla GUID",
+                    content = @Content(
+                            examples = @ExampleObject(
+                                    name = "CustomRequest",
+                                    value = "curl -F 'file=@proba.zip' -F 'guid=3333-1111' -X POST http://localhost:8080/pakrunner/uploadzip"
+                            )
+                    )
+            )
+    )
     public ResponseEntity uploadZIP(@RequestParam("file") MultipartFile uploadedInputStream,
-            @RequestParam("guid") String guidInput, ModelMap modelMap) throws JSONException {
+            @RequestParam("guid") String guidInput, ModelMap modelMap) {
 
         modelMap.addAttribute("guid", guidInput);
         modelMap.addAttribute("file", uploadedInputStream);
 
-        JSONObject json = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
+
         File uploadedZIP = new File(WORKING_DIR_ROOT + File.separator + guidInput + File.separator + "tmp.zip");
 
         try {
@@ -521,12 +655,26 @@ public class PakREST {
      *
      * @param input
      * @return
-     * @throws JSONException
      */
     @PostMapping("/localcopy")
-    public ResponseEntity localCopy(@RequestBody String input) throws JSONException {
+    @Operation(
+            summary = "Kopiranje fajla",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Kopiranje se vrši iz osnovnog MASTER_DIR ili nekog njegovog podfoldera u radni direktorijum posla GUID. "
+                    + "Navodi se relativna putanja fajla koji se kopira i ciljno ime fajla",
+                    content = @Content(
+                            examples = @ExampleObject(
+                                    name = "CustomRequest",
+                                    value = "{\"guid\":\"3333-1111\", \"path\":\"L10/ttt.txt\", \"name\":\"ttt-kopija.txt\"}"
+                            )
+                    )
+            )
+    )
+    public ResponseEntity localCopy(@RequestBody String input) {
 
-        JSONObject json = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
+
         String guidInput, sourceRelativePath, destName;
 
         try {
@@ -536,7 +684,7 @@ public class PakREST {
 
             // Proveri da li je JSON u pravom formatu i setuj varijable
             if (!jsonNode.has("guid") || !jsonNode.has("path") || !jsonNode.has("name")) {
-                throw new JSONException("JSON format problem.");
+                throw new RuntimeException("ERROR: JSON format problem");
             } else {
                 guidInput = jsonNode.get("guid").asText();
                 sourceRelativePath = jsonNode.get("path").asText();
@@ -556,7 +704,7 @@ public class PakREST {
             // Setuj odgovarajuce dozvole
             PakUtil.setPermissions(destFile.toString());
 
-        } catch (JSONException e) {
+        } catch (RuntimeException e) {
             json.put("status", false);
             json.put("message", "ERROR: JSON format problem.");
             return ResponseEntity.ok(json.toString());
@@ -578,12 +726,26 @@ public class PakREST {
      *
      * @param input
      * @return
-     * @throws JSONException
      */
     @PostMapping("/copyfiletasktotask")
-    public ResponseEntity copyTaskToTask(@RequestBody String input) throws JSONException {
+    @Operation(
+            summary = "Kopiranje fajla iz jednog posla u drugi",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Kopiranje se vrši iz radnog direktorijuma guidsrc u direktorijum guiddest, "
+                    + "pri čemu je moguće zadati i novo ime fajla.",
+                    content = @Content(
+                            examples = @ExampleObject(
+                                    name = "CustomRequest",
+                                    value = "{\"guidsrc\":\"3333-1111\", \"guiddest\":\"3333-2222\", \"namesrc\":\"pom.xml\", \"namedest\":\"pom.xml\"}"
+                            )
+                    )
+            )
+    )
+    public ResponseEntity copyTaskToTask(@RequestBody String input) {
 
-        JSONObject json = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
+
         String guidSrc;
         String guidDest;
         String nameSrc;
@@ -596,7 +758,7 @@ public class PakREST {
 
             // Proveri da li je JSON u pravom formatu i setuj varijable
             if (!jsonNode.has("guidsrc") || !jsonNode.has("guiddest") || !jsonNode.has("namesrc") || !jsonNode.has("namedest")) {
-                throw new JSONException("ERROR: JSON format problem.");
+                throw new RuntimeException("ERROR: JSON format problem.");
             } else {
                 guidSrc = jsonNode.get("guidsrc").asText();
                 guidDest = jsonNode.get("guiddest").asText();
@@ -615,7 +777,7 @@ public class PakREST {
             // Kopiranje samog fajla
             FileUtils.copyFile(srcFile, destFile);
 
-        } catch (JSONException e) {
+        } catch (RuntimeException e) {
             json.put("status", false);
             json.put("message", "ERROR: JSON format problem.");
             return ResponseEntity.ok(json.toString());
@@ -638,12 +800,25 @@ public class PakREST {
      *
      * @param input
      * @return
-     * @throws JSONException
      */
     @PostMapping("/removefile")
-    public ResponseEntity removeFile(@RequestBody String input) throws JSONException {
+    @Operation(
+            summary = "Brisanje fajla iz radnog direktorijuma",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "U svrhu brisanja fajla iz radnog direktorijuma posla, koristi se ovaj poziv. Može se navesti i relativna putanja.",
+                    content = @Content(
+                            examples = @ExampleObject(
+                                    name = "CustomRequest",
+                                    value = "{\"guid\":\"3333-1111\", \"path\":\"ttt.txt\"}"
+                            )
+                    )
+            )
+    )
+    public ResponseEntity removeFile(@RequestBody String input) {
 
-        JSONObject json = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
+
         String guidInput, fileRelativePath;
 
         try {
@@ -653,7 +828,7 @@ public class PakREST {
 
             // Proveri da li je JSON u pravom formatu i setuj varijable
             if (!jsonNode.has("guid") || !jsonNode.has("path")) {
-                throw new JSONException("JSON format problem.");
+                throw new RuntimeException("ERROR: JSON format problem");
             } else {
                 guidInput = jsonNode.get("guid").asText();
                 fileRelativePath = jsonNode.get("path").asText();
@@ -671,7 +846,7 @@ public class PakREST {
                 return ResponseEntity.ok(json.toString());
             }
 
-        } catch (JSONException e) {
+        } catch (RuntimeException e) {
             json.put("status", false);
             json.put("message", "ERROR: JSON format problem.");
             return ResponseEntity.ok(json.toString());
@@ -693,12 +868,25 @@ public class PakREST {
      *
      * @param input
      * @return
-     * @throws JSONException
      */
     @PostMapping("/renamefile")
-    public ResponseEntity renameFile(@RequestBody String input) throws JSONException {
+    @Operation(
+            summary = "Preimenovanje fajla u radnom direktorijumu",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "U svrhu preimenovanja fajla iz radnog direktorijuma posla, koristi se ovaj poziv. Mogu se navesti i relativne putanje.",
+                    content = @Content(
+                            examples = @ExampleObject(
+                                    name = "CustomRequest",
+                                    value = "{\"guid\":\"3333-1111\", \"pathold\":\"Ulaz.csv\", \"pathnew\":\"Ulaz1.csv\"}"
+                            )
+                    )
+            )
+    )
+    public ResponseEntity renameFile(@RequestBody String input) {
 
-        JSONObject json = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
+
         String guidInput;
         String pathOld;
         String pathNew;
@@ -709,13 +897,13 @@ public class PakREST {
 
             // Proveri da li je JSON u pravom formatu i setuj varijable
             if (!jsonNode.has("guid")) {
-                throw new JSONException("ERROR: JSON format problem (guid).");
+                throw new RuntimeException("ERROR: JSON format problem (guid).");
             }
             if (!jsonNode.has("pathold")) {
-                throw new JSONException("ERROR: JSON format problem (pathold).");
+                throw new RuntimeException("ERROR: JSON format problem (pathold).");
             }
             if (!jsonNode.has("pathnew")) {
-                throw new JSONException("ERROR: JSON format problem (pathnew).");
+                throw new RuntimeException("ERROR: JSON format problem (pathnew).");
             }
 
             guidInput = jsonNode.get("guid").asText();
@@ -734,7 +922,7 @@ public class PakREST {
                 return ResponseEntity.ok(json.toString());
             }
 
-        } catch (JSONException e) {
+        } catch (RuntimeException e) {
             json.put("status", false);
             json.put("message", e.getMessage());
             return ResponseEntity.ok(json.toString());
@@ -756,12 +944,25 @@ public class PakREST {
      *
      * @param input
      * @return
-     * @throws JSONException
      */
     @PostMapping("/listfiles")
-    public ResponseEntity listfiles(@RequestBody String input) throws JSONException {
+    @Operation(
+            summary = "Vraća listu fajlova",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Vraća listu fajlova iz radnog direktorijuma guid + path",
+                    content = @Content(
+                            examples = @ExampleObject(
+                                    name = "CustomRequest",
+                                    value = "{\"guid\":\"3333-4444\", \"path\":\"/L10\"}"
+                            )
+                    )
+            )
+    )
+    public ResponseEntity listfiles(@RequestBody String input) {
 
-        JSONObject json = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
+
         String guidInput;
         String relativePath;
         String dirToList;
@@ -773,7 +974,7 @@ public class PakREST {
 
             // Proveri da li je JSON u pravom formatu i setuj varijable
             if (!jsonNode.has("guid") || !jsonNode.has("path")) {
-                throw new JSONException("JSON format problem.");
+                throw new RuntimeException("ERROR: JSON format problem");
             } else {
                 guidInput = jsonNode.get("guid").asText();
                 relativePath = jsonNode.get("path").asText();
@@ -810,12 +1011,26 @@ public class PakREST {
             json.put("message", "OK");
             json.put("task", guidInput);
             json.put("path", relativePath);
-            json.put("directories", dirList);
-            json.put("files", fileList);
+
+            ArrayNode dirsNode = mapper.createArrayNode();
+
+            for (String item : dirList) {
+                dirsNode.add(item);
+            }
+
+            json.set("directories", dirsNode);
+
+            ArrayNode filesNode = mapper.createArrayNode();
+
+            for (String item : fileList) {
+                filesNode.add(item);
+            }
+
+            json.set("files", filesNode);
 
             return ResponseEntity.ok(json.toString());
 
-        } catch (JSONException e) {
+        } catch (RuntimeException e) {
             json.put("status", false);
             json.put("message", "ERROR: JSON format problem.");
             return ResponseEntity.ok(json.toString());
@@ -831,12 +1046,16 @@ public class PakREST {
      * Vraca listu taskova
      *
      * @return
-     * @throws JSONException
      */
     @GetMapping("/tasklist")
-    public ResponseEntity taskslist() throws JSONException {
+    @Operation(
+            summary = "Lista poslova. Lista tekućih poslova u direktorijumu RESULT_DIR",
+            parameters = {}
+    )
+    public ResponseEntity taskslist() {
 
-        JSONObject json = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
 
         try {
 
@@ -857,7 +1076,14 @@ public class PakREST {
 
             json.put("status", true);
             json.put("message", "OK");
-            json.put("tasks", dirList);
+
+            ArrayNode dirsNode = mapper.createArrayNode();
+
+            for (String item : dirList) {
+                dirsNode.add(item);
+            }
+
+            json.set("tasks", dirsNode);
 
             return ResponseEntity.ok(json.toString());
 
@@ -873,12 +1099,27 @@ public class PakREST {
      *
      * @param input
      * @return
-     * @throws JSONException
      */
     @PostMapping("/runshorttask")
-    public ResponseEntity runShortTask(@RequestBody String input) throws JSONException {
+    @Operation(
+            summary = "Izvršavanje kratkog posla",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Ovaj poziv se koristi za razne pomoćne skriptove (kopiranje, brisanje, promena prava pristupa...) "
+                    + "za koje se ne očekuje da dugo traju. Poziv je blokirajući, a ovakvi pozivi se loguju u poseban log fajl "
+                    + "pod nazivom shorttask.log.",
+                    content = @Content(
+                            examples = @ExampleObject(
+                                    name = "CustomRequest",
+                                    value = "{\"guid\":\"3333-4444\", \"command\":\"./proba1.sh\"}"
+                            )
+                    )
+            )
+    )
+    public ResponseEntity runShortTask(@RequestBody String input) {
 
-        JSONObject json = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
+
         String guid, command;
 
         try {
@@ -888,7 +1129,7 @@ public class PakREST {
 
             // Proveri da li je JSON u pravom formatu i setuj varijable
             if (!jsonNode.has("guid") || !jsonNode.has("command")) {
-                throw new JSONException("JSON format problem.");
+                throw new RuntimeException("ERROR: JSON format problem");
             } else {
                 guid = jsonNode.get("guid").asText();
                 command = jsonNode.get("command").asText();
@@ -913,7 +1154,7 @@ public class PakREST {
             Process shortTask = pb.start();
             shortTask.waitFor();
 
-        } catch (JSONException e) {
+        } catch (RuntimeException e) {
             json.put("status", false);
             json.put("message", "ERROR: JSON format problem.");
             return ResponseEntity.ok(json.toString());
