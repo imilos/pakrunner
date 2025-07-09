@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pakrunner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pakrunner
+  template:
+    metadata:
+      labels:
+        app: pakrunner
+    spec:
+      containers:
+      - name: pakrunner
+        image: imilos/pakrunner:latest
+        ports:
+        - containerPort: 8080
+

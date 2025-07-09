@@ -8,6 +8,7 @@ spec:
     app: pakrunner  # Must match labels in your Deployment
   ports:
     - protocol: TCP
+      port: 18080
       targetPort: 8080  # Container port (matches your Spring Boot app)
       nodePort: 32333  # Manually set NodePort (must be 30000-32767 on most clusters)
 
