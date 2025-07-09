@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: pakrunner
+  namespace: default
 spec:
   type: NodePort  # Explicitly set to NodePort
   selector:
